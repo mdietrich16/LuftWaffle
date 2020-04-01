@@ -41,8 +41,8 @@ int main(int argc, char const *argv[]) {
       imu.processGyro(dt);
       angle = imu.filter();
 
-      Logger::log(DEBUG, "%f, %f, %f, %f, %f, %f, %f, %f, %f", imu.accAngle.x, imu.accAngle.y, imu.accAngle.z, imu.gyroData.x, imu.gyroData.y, imu.gyroData.z, angle.x, angle.y, angle.z);
-
+      Logger::log(DEBUG, "%f, %f, %f, %f, %f, %f", imu.accData.x, imu.accData.y, imu.accData.z, imu.gyroData.x, imu.gyroData.y, imu.gyroData.z);
+      //Logger::log(DEBUG, "%f, %f, %f, %f, %f, %f, %f, %f, %f", imu.accAngle.x, imu.accAngle.y, imu.accAngle.z, imu.gyroData.x, imu.gyroData.y, imu.gyroData.z, angle.x, angle.y, angle.z);
       if((count % 20) == 1) {
         Logger::flush();
       }
