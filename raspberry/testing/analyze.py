@@ -161,6 +161,7 @@ def g(x):
     return np.convolve(x, sinc(), 'same')
 
 
+# %%codecell
 with open('./raspberry/testing/200326.log', 'r') as file:
     lines = file.readlines()
 data = np.array([[float(d)
@@ -186,4 +187,12 @@ a.shape
 plt.plot(a[:, 0])
 plt.plot(b[:, 0])
 
-data[:3, :].T
+# %%codecellwith open('./raspberry/testing/200326.log', 'r') as file:
+with open('./raspberry/testing/200401.log', 'r') as file:
+    lines = file.readlines()
+data = np.array([[float(d)
+                  for d in l.replace('\n', '').split(': ')[1].split(', ')]
+                for l in lines[10::]]).T
+data = data[:3, :]
+plt.plot(data[0], 'b', data[1], 'g', data[2], 'y',
+         np.sqrt(np.sum(np.square(data), axis=0)), 'r')
