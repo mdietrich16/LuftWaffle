@@ -18,8 +18,8 @@ int main(int argc, char const *argv[]) {
   imu.init(RANGE_2G, RANGE_245DPS, RANGE_1_3GAUSS,  0.9, 0.2);
   imu.calibrate();
   imu.initAngles();
-
-  double dt;
+  Logger::log(DEBUG, "AccAngle x, AccAngle y, AccAngle z, Angle x, Angle y, Angle z, AccData x, AccData y, AccData z, GyroData x, GyroData y, GyroData z, MagData x, MagData y, MagData z");
+  double dt = 0;
   int count = 0;
   double time = 0;
   double t;
@@ -41,13 +41,18 @@ int main(int argc, char const *argv[]) {
       imu.processGyro(dt);
       angle = imu.filter();
 
-      Logger::log(DEBUG, "%f, %f, %f, %f, %f, %f", imu.accData.x, imu.accData.y, imu.accData.z, imu.gyroData.x, imu.gyroData.y, imu.gyroData.z);
-      //Logger::log(DEBUG, "%f, %f, %f, %f, %f, %f, %f, %f, %f", imu.accAngle.x, imu.accAngle.y, imu.accAngle.z, imu.gyroData.x, imu.gyroData.y, imu.gyroData.z, angle.x, angle.y, angle.z);
+      // Logger::log(DEBUG, "%f, %f, %f, %f, %f, %f", imu.accData.x, imu.accData.y, imu.accData.z, imu.gyroData.x, imu.gyroData.y, imu.gyroData.z);
+      Logger::log(DEBUG, "%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f",
+                  imu.accAngle.x, imu.accAngle.y, imu.accAngle.z,
+                  angle.x, angle.y, angle.z,
+                  imu.accData.x, imu.accData.y, imu.accData.z,
+                  imu.gyroData.x, imu.gyroData.y, imu.gyroData.z,
+                  imu.magData.x, imu.magData.y, imu.magData.z);
       if((count % 20) == 1) {
         Logger::flush();
       }
 
-      if (count >= 30000) {
+      if (count >= 150000) {
         loop = false;
       }
     }

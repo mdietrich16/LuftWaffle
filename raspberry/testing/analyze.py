@@ -187,12 +187,17 @@ a.shape
 plt.plot(a[:, 0])
 plt.plot(b[:, 0])
 
-# %%codecellwith open('./raspberry/testing/200326.log', 'r') as file:
-with open('./raspberry/testing/200401.log', 'r') as file:
+# %%codecell
+with open('./raspberry/testing/200326.log', 'r') as file:
+    # with open('./raspberry/testing/200401.log', 'r') as file:
     lines = file.readlines()
 data = np.array([[float(d)
                   for d in l.replace('\n', '').split(': ')[1].split(', ')]
-                for l in lines[10::]]).T
-data = data[:3, :]
-plt.plot(data[0], 'b', data[1], 'g', data[2], 'y',
-         np.sqrt(np.sum(np.square(data), axis=0)), 'r')
+                for l in lines[10::]])[:, :6]
+'''plt.plot(data[:, 0], 'b', data[:, 1], 'g', data[:, 2], 'y',
+         np.sqrt(np.sum(np.square(data[:, :3]), axis=1)), 'r')'''
+print(np.var(data, axis=0))
+mean = np.mean(data, axis=0, keepdims=True)
+cov = (data-mean).T.dot(data-mean)
+print(mean)
+print(cov/(data.shape[0]-1))
