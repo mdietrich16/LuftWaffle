@@ -83,3 +83,62 @@ for i in range(30000):
     variances[i, :] = out[1]
     ks[i, :] = out[2]
 plt.plot(data[:, 0], 'y,', preds[:, 0], 'g,')
+
+# %%codecell
+with open('./raspberry/testing/200409_02.log', 'r') as file:
+    lines = file.readlines()
+data = np.array([[float(d)
+                  for d in l.replace('\n', '').split(': ')[1].split(', ')]
+                 for l in lines[11::]])
+accData = data[:, 6:9]
+
+
+def strided_app(a, L, S):  # Window len = L, Stride len/stepsize = S
+    nrows = ((a.size-L)//S)+1
+    n = a.strides[0]
+    return np.lib.stride_tricks.as_strided(a,
+                                           shape=(nrows, L), strides=(S*n, n))
+
+
+# %%codecell
+mask = np.all(np.abs(np.diff(accData, axis=0, append=0)) > 0.01, axis=1)
+pad = 1000
+p = np.round(pad*np.mean(strided_app(np.pad(mask,
+                                            (pad//2, (pad-1)//2), 'constant'),
+                                     pad, 1), axis=1)).astype(np.bool)
+print('Sum: ', mask.sum(),
+      p.sum(), 'Median: ',
+      np.median(np.abs(accData[~mask])),
+      'Mean: ', np.mean(np.abs(accData[~mask])))
+accData = accData[~p]
+plt.plot(accData)
+
+# %%codecell
+mask = np.all(np.abs(np.diff(accData, axis=0, append=0)) > 0.01, axis=1)
+pad = 1000
+p = np.round(pad *
+             np.mean(strided_app(np.pad(mask,
+                                        (pad//2, (pad-1)//2),
+                                        'constant'),
+                                 pad, 1), axis=1)).astype(np.bool)
+accData = accData[~p]
+cuts = np.where(np.any(np.abs(np.diff(accData, axis=0)) > 0.1, axis=1))[0]
+cuts = cuts[np.abs(np.diff(cuts, append=0)) > 1000]
+splits = np.split(accData, cuts)
+min_d = np.min([d.shape[0] for d in splits])
+splits = np.stack([arr[-min_d:] for arr in splits])
+# ind = np.array([25000, 29000, 51500, 58000, 77000,
+#                 85000, 105000, 111500, 127500, 133000])
+# splits = np.split(accData, ind)[::2]
+# accData = np.concatenate(splits)
+# plt.plot(accData)
+plt.plot(np.concatenate(splits))
+ix = np.argmax(np.min(np.abs(splits), axis=1), axis=1)
+sign = np.atleast_2d(np.sign(splits[np.arange(6), min_d//2, ix])).T
+y = np.zeros_like(splits)
+y[np.arange(6), :, ix] = sign
+data = np.concatenate(splits)
+y = np.concatenate(y)
+data = np.pad(data, ((0, 0), (0, 1)), 'constant', constant_values=1)
+X = np.linalg.inv(data.T.dot(data)).dot(data.T).dot(y)
+X

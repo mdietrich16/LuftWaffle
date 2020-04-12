@@ -3,6 +3,10 @@
 #include "../src/Logger.hpp"
 #include "../src/IMU.hpp"
 
+#define INTERVAL_MSEC			2
+#define RUNTIME_SEC			600
+#define RUNTIME				RUNTIME_SEC * 1000 / INTERVAL_MSEC
+
 double millis() {
     struct timespec time;
     clock_gettime(CLOCK_REALTIME, &time);
@@ -22,16 +26,22 @@ int main(int argc, char const *argv[]) {
   double dt = 0;
   int count = 0;
   double time = 0;
+  double t0 = millis();
   double t;
   bool loop = true;
   IMU::vector<float> angle;
+  printf("You have %d seconds to move the Quad to 6 positions, "
+          "so that all axes are exposed to positive and negative gravity.\n"
+          "Waiting for clearance... (ENTER)",
+         RUNTIME_SEC);
+  getchar();
 
   time = millis();
 
   while(loop) {
     t = millis();
     dt = (t- time);
-    if(dt >= 0.002) {
+    if(dt >= INTERVAL_MSEC) {
       count++;
       time = t;
 
@@ -52,12 +62,12 @@ int main(int argc, char const *argv[]) {
         Logger::flush();
       }
 
-      if (count >= 150000) {
+      if (count >= RUNTIME) {
         loop = false;
       }
     }
   }
   Logger::close();
-  printf("Exiting...\n");
+  printf("Exiting...\nLoop took %f seconds, should have taken %d seconds", (millis() - t0)/1000, RUNTIME_SEC);
   return 0;
 }

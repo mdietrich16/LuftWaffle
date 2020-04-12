@@ -16,20 +16,33 @@ class Quaternion(numbers.Number):
                 self._x = float(x)
                 self._y = float(y)
                 self._z = float(z)
-        elif (isinstance(w, numbers.Complex) and
+        elif (isinstance(w, Quaternion) and
               (x is None and y is None and z is None)):
-            self._w = w.real
-            self._x = w.imag
-            self._y = 0
-            self._z = 0
-        else:
-            try:
-                self._w = float(w)
-                self._x = float(x)
-                self._y = float(y)
-                self._z = float(z)
-            except Exception:
-                raise TypeError('Wrong input type!')
+            self = w.copy()
+        elif (isinstance(w, numbers.Complex)):
+            if (x is None and y is None and z is None):
+                self._w = w.real
+                self._x = w.imag
+                self._y = 0.
+                self._z = 0.
+            elif isinstance(x, np.ndarray) and w.imag == 0:
+                self._w = w.real
+                self._x = x.flatten()[0]
+                self._y = x.flatten()[1]
+                self._z = x.flatten()[2]
+            elif isinstance(x, Quaternion) and x.w == 0:
+                self._w = w
+                self._x = x.x
+                self._y = x.y
+                self._z = x.z
+            else:
+                try:
+                    self._w = float(w)
+                    self._x = float(x)
+                    self._y = float(y)
+                    self._z = float(z)
+                except Exception:
+                    raise TypeError('Wrong input type!')
 
     def __add__(self, other):
         if isinstance(other, Quaternion):
@@ -53,8 +66,8 @@ class Quaternion(numbers.Number):
 
     def __mul__(self, other):
         if isinstance(other, Quaternion):
-            return Quaternion(self._w * other._w + self._x * other._x +
-                              self._y * other._y + self._z * other._z,
+            return Quaternion(self._w * other._w - self._x * other._x -
+                              self._y * other._y - self._z * other._z,
                               self._w * other._x + self._x * other._w +
                               self._y * other._z - self._z * other._y,
                               self._w * other._y - self._x * other._z +
@@ -62,10 +75,10 @@ class Quaternion(numbers.Number):
                               self._w * other._z + self._x * other._y -
                               self._y * other._x + self._z * other._w)
         elif isinstance(other, numbers.Complex):
-            return Quaternion(self._w * other.real + self._x * other.imag,
+            return Quaternion(self._w * other.real - self._x * other.imag,
                               self._w * other.imag + self._x * other.real,
                               self._y * other.real + self._z * other.imag,
-                              self._y * other.imag + self._z * other.real)
+                              -self._y * other.imag + self._z * other.real)
         else:
             return NotImplemented
 
@@ -106,8 +119,8 @@ class Quaternion(numbers.Number):
 
     def __rmul__(self, other):
         if isinstance(other, Quaternion):
-            return Quaternion(other._w * self._w + other._x * self._x +
-                              other._y * self._y + other._z * self._z,
+            return Quaternion(other._w * self._w - other._x * self._x -
+                              other._y * self._y - other._z * self._z,
                               other._w * self._x + other._x * self._w +
                               other._y * self._z - other._z * self._y,
                               other._w * self._y - other._x * self._z +
@@ -115,7 +128,7 @@ class Quaternion(numbers.Number):
                               other._w * self._z + other._x * self._y -
                               other._y * self._x + other._z * self._w)
         elif isinstance(other, numbers.Complex):
-            return Quaternion(other.real * self._w + other.imag * self._x,
+            return Quaternion(other.real * self._w - other.imag * self._x,
                               other.real * self._x + other.imag * self._w,
                               other.real * self._y - other.imag * self._z,
                               other.real * self._z + other.imag * self._y)
@@ -226,7 +239,12 @@ class Quaternion(numbers.Number):
     def ln(self):
         v = self.v
         norm = self.norm()
-        return np.log(norm) + v/v.norm()*np.arccos(self._w/norm)
+        vnorm = v.norm()
+        if norm == 0:
+            raise ValueError('Cannot take the logarithm of zero')
+        elif vnorm == 0:
+            return Quaternion(np.log(norm))
+        return Quaternion(np.log(norm), v/vnorm*np.arccos(self._w/norm))
 
     def conjugate(self):
         return Quaternion(self._w, -self._x, -self._y, -self._z)
@@ -315,18 +333,4 @@ class Quaternion(numbers.Number):
 def rotate(vec, axis, angle):
     rot = Quaternion(np.cos(angle/2), *(axis * np.sin(angle/2))).normalize()
     v = Quaternion(0, *vec)
-    return (rot * v * rot.conj())
-
-
-# %%codecell
-r = Quaternion(1, 0, 0, 0)
-i = Quaternion(0, 1, 0, 0)
-j = Quaternion(0, 0, 1, 0)
-k = Quaternion(0, 0, 0, 1)
-v = Quaternion(0, 0, 1, 0)
-q = Quaternion(np.cos(np.pi/4), np.sin(np.pi/4), 0, 0).normalize()
-
-# %%codecell
-print(q)
-print(q*i*q.conj())
-i*(1+1j)
+    return (rot * v * rot.conj()).normalize()
