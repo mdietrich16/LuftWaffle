@@ -1,7 +1,7 @@
-/* 
+/*
  * File:   IMU.cpp
  * Author: TheBeast
- * 
+ *
  * Created on 12. März 2016, 14:28
  */
 
@@ -173,9 +173,12 @@ int IMU::read() {
 
     i2c.readBlock(L3GD20H_GYRO_ADDRESS, GYRO_REGISTER_OUT_X_L, buff, 6);
 
-    gyroData.x += beta * ((((int16_t) (buff[0] | (buff[1] << 8))) * sensitivityg) - gyroData.x);
-    gyroData.y += beta * ((-((int16_t) (buff[2] | (buff[3] << 8))) * sensitivityg) - gyroData.y);
-    gyroData.z += beta * ((-((int16_t) (buff[4] | (buff[5] << 8))) * sensitivityg) - gyroData.z);
+    // gyroData.x += beta * ((((int16_t) (buff[0] | (buff[1] << 8))) * sensitivityg) - gyroData.x);
+    // gyroData.y += beta * ((-((int16_t) (buff[2] | (buff[3] << 8))) * sensitivityg) - gyroData.y);
+    // gyroData.z += beta * ((-((int16_t) (buff[4] | (buff[5] << 8))) * sensitivityg) - gyroData.z);
+    gyroData.x = (((int16_t) (buff[0] | (buff[1] << 8))) * sensitivityg);
+    gyroData.y = -(((int16_t) (buff[2] | (buff[3] << 8))) * sensitivityg);
+    gyroData.z = -(((int16_t) (buff[4] | (buff[5] << 8))) * sensitivityg);
 
     i2c.readBlock(LSM303_MAG_ADDRESS, LSM303_REGISTER_MAG_OUT_X_H_M, buff, 6);
 
@@ -189,9 +192,9 @@ int IMU::calibrate() {
     float offsdummy[3] = {0};
     float beta_ = beta;
     beta = 1.0;
-    
+
     Logger::log(DEBUG, "IMU: Test --- Test --- Test --- Test");
-    
+
     gyroAngle.x = 0.0;
     gyroAngle.y = 0.0;
     gyroAngle.z = 0.0;
@@ -199,9 +202,9 @@ int IMU::calibrate() {
     gyroData.x = 0.0;
     gyroData.y = 0.0;
     gyroData.z = 0.0;
-    
+
     int sample_num = 100;
-    
+
     for (int i = 0; i < sample_num; i++) {
 	read();
 	offsdummy[0] += gyroData.x;

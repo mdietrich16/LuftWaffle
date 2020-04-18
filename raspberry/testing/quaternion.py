@@ -6,10 +6,17 @@ class Quaternion(numbers.Number):
     def __init__(self, w, x=None, y=None, z=None):
         if isinstance(w, np.ndarray):
             if x is None and y is None and z is None:
-                self._w = 0.
-                self._x = w.flatten()[0]
-                self._y = w.flatten()[1]
-                self._z = w.flatten()[2]
+                assert w.size >= 3 and w.size <= 4
+                if w.size == 4:
+                    self._w = w.flatten()[0]
+                    self._x = w.flatten()[1]
+                    self._y = w.flatten()[2]
+                    self._z = w.flatten()[3]
+                elif w.size == 3:
+                    self._w = 0.
+                    self._x = w.flatten()[0]
+                    self._y = w.flatten()[1]
+                    self._z = w.flatten()[2]
             elif (isinstance(x, np.ndarray) and isinstance(y, np.ndarray)
                     and isinstance(z, np.ndarray)):
                 self._w = float(w)
@@ -260,6 +267,17 @@ class Quaternion(numbers.Number):
         self /= length
         return self
 
+    def toEuler(self):
+        pitch = np.degrees(-np.arctan2(2 * self._y * self._z -
+                                       2 * self._w * self._x,
+                                       2 * self._w**2 + 2 * self._z**2 - 1))
+        roll = np.degrees(np.arcsin(2 * self._x * self._z +
+                                    2 * self._w * self._y))
+        yaw = np.degrees(np.arctan2(2 * self._x * self._y -
+                                    2 * self._w * self._z,
+                                    2 * self._w**2 + 2 * self._x**2 - 1))
+        return (pitch, roll, yaw)
+
     def __get_w(self):
         return self._w
 
@@ -320,7 +338,7 @@ class Quaternion(numbers.Number):
                 .format(self._w, self._x, self._y, self._z))
 
     def __repr__(self):
-        return ('Quaternion({:.2f}, {:.2f}, {:.2f}, {:.2f})'
+        return ('Quaternion({:f}, {:f}, {:f}, {:f})'
                 .format(self._w, self._x, self._y, self._z))
 
     w = property(__get_w, __set_w)

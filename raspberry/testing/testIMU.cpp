@@ -2,10 +2,13 @@
 #include <cstdlib>
 #include "../src/Logger.hpp"
 #include "../src/IMU.hpp"
+#include "../src/Client.hpp"
 
 #define INTERVAL_MSEC			2
 #define RUNTIME_SEC			600
 #define RUNTIME				RUNTIME_SEC * 1000 / INTERVAL_MSEC
+
+char hostname[40] = "192.168.178.21";
 
 double millis() {
     struct timespec time;
@@ -22,11 +25,12 @@ int main(int argc, char const *argv[]) {
   imu.init(RANGE_2G, RANGE_245DPS, RANGE_1_3GAUSS,  0.9, 0.2);
   imu.calibrate();
   imu.initAngles();
+
+  Client client = Client(50099, hostname);
   Logger::log(DEBUG, "AccAngle x, AccAngle y, AccAngle z, Angle x, Angle y, Angle z, AccData x, AccData y, AccData z, GyroData x, GyroData y, GyroData z, MagData x, MagData y, MagData z");
   double dt = 0;
   int count = 0;
   double time = 0;
-  double t0 = millis();
   double t;
   bool loop = true;
   IMU::vector<float> angle;
@@ -35,6 +39,7 @@ int main(int argc, char const *argv[]) {
           "Waiting for clearance... (ENTER)",
          RUNTIME_SEC);
   getchar();
+  double t0 = millis();
 
   time = millis();
 
@@ -58,6 +63,7 @@ int main(int argc, char const *argv[]) {
                   imu.accData.x, imu.accData.y, imu.accData.z,
                   imu.gyroData.x, imu.gyroData.y, imu.gyroData.z,
                   imu.magData.x, imu.magData.y, imu.magData.z);
+      client.writeRaw(&(imu.accData[0]), &(imu.gyroData[0]);
       if((count % 20) == 1) {
         Logger::flush();
       }

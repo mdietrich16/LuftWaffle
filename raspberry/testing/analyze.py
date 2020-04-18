@@ -189,28 +189,32 @@ plt.plot(a[:, 0])
 plt.plot(b[:, 0])
 
 # %%codecell
-with open('./raspberry/testing/200326.log', 'r') as file:
+with open('./raspberry/testing/200412.log', 'r') as file:
+    # with open('./raspberry/testing/200326.log', 'r') as file:
     # with open('./raspberry/testing/200401.log', 'r') as file:
     lines = file.readlines()
 data = np.array([[float(d)
                   for d in l.replace('\n', '').split(': ')[1].split(', ')]
-                for l in lines[10::]])[:, :6]
+                 for l in lines[11::] if 'ERROR' not in l])
 '''plt.plot(data[:, 0], 'b', data[:, 1], 'g', data[:, 2], 'y',
          np.sqrt(np.sum(np.square(data[:, :3]), axis=1)), 'r')'''
 print(np.var(data, axis=0))
-mean = np.mean(data, axis=0, keepdims=True)
-cov = (data-mean).T.dot(data-mean)
+d = data[:, [3, 4, 5, 9, 10, 11]]
+mean = np.mean(d, axis=0, keepdims=True)
+cov = (d-mean).T.dot(d-mean)
 print(mean)
 print(cov/(data.shape[0]-1))
 
 
 # %%codecell
-def calibrateAcc(filename):
-    with open(filename, 'r') as file:
-        lines = file.readlines()
-    data = np.array([[float(d)
-                      for d in l.replace('\n', '').split(': ')[1].split(', ')]
-                     for l in lines[11::]])
+def calibrateAcc(data):
+    if not isinstance(data, np.ndarray):
+        with open(data, 'r') as file:
+            lines = file.readlines()
+        data = np.array([[float(d)
+                          for d in l.replace('\n', '').
+                          split(': ')[1].split(', ')]
+                         for l in lines[11::]])
     accData = data[:, 6:9]
 
     def strided_app(a, L, S):  # Window len = L, Stride len/stepsize = S
@@ -230,12 +234,13 @@ def calibrateAcc(filename):
     cuts = np.where(np.any(np.abs(np.diff(accData, axis=0)) > 0.1, axis=1))[0]
     cuts = cuts[np.abs(np.diff(cuts, append=0)) > 1000]
     splits = np.split(accData, cuts)
+    n_splits = len(splits)
     min_d = np.min([d.shape[0] for d in splits])
     splits = np.stack([arr[-min_d:] for arr in splits])
     ix = np.argmax(np.min(np.abs(splits), axis=1), axis=1)
-    sign = np.atleast_2d(np.sign(splits[np.arange(6), min_d//2, ix])).T
+    sign = np.atleast_2d(np.sign(splits[np.arange(n_splits), min_d//2, ix])).T
     y = np.zeros_like(splits)
-    y[np.arange(6), :, ix] = sign
+    y[np.arange(n_splits), :, ix] = sign
     data = np.concatenate(splits)
     y = np.concatenate(y)
     data = np.pad(data, ((0, 0), (0, 1)), 'constant', constant_values=1)
